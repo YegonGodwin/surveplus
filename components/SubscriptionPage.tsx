@@ -6,7 +6,7 @@ import type { SubscriptionPlan } from '../types';
 const PLANS_DATA: SubscriptionPlan[] = [
   {
     name: 'Business Basic',
-    price: '5',
+    price: '195',
     isPopular: false,
     features: [
       '5 surveys per day',
@@ -18,7 +18,7 @@ const PLANS_DATA: SubscriptionPlan[] = [
   },
   {
     name: 'Business Premium',
-    price: '12',
+    price: '295',
     isPopular: true,
     features: [
       '10 surveys per day',
@@ -30,7 +30,7 @@ const PLANS_DATA: SubscriptionPlan[] = [
   },
   {
     name: 'Business Expert',
-    price: '20',
+    price: '395',
     isPopular: false,
     features: [
       '20 surveys per day',
@@ -74,7 +74,7 @@ const SubscriptionPlanCard: React.FC<{ plan: SubscriptionPlan, onSelectPlan: (pl
           </li>
         ))}
       </ul>
-      <button 
+      <button
         onClick={() => onSelectPlan(plan)}
         className={`w-full font-semibold py-3 rounded-lg flex items-center justify-center gap-2 transition-opacity hover:opacity-90 shadow-sm ${buttonClasses}`}>
         Select Plan <IconChevronRight />
