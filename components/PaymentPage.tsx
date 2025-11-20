@@ -31,7 +31,7 @@ const PaymentPage: React.FC<{ plan: SubscriptionPlan; onBack: () => void; user: 
         return phoneRegex.test(phone);
     };
 
-    const handlePayment = (e: React.FormEvent) => {
+    const handlePayment = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
 
@@ -43,16 +43,44 @@ const PaymentPage: React.FC<{ plan: SubscriptionPlan; onBack: () => void; user: 
         setIsProcessing(true);
         setPaymentStep('processing');
 
-        // Simulate M-Pesa STK Push
-        setTimeout(() => {
+        try {
+            // Import axios dynamically or use fetch
+            const axios = (await import('axios')).default;
+            const token = localStorage.getItem('token');
+
+            const response = await axios.post('http://localhost:5000/api/payments/stk-push', {
+                phoneNumber,
+                amount: parseFloat(plan.price.replace(/,/g, '')), // Ensure amount is a number
+                planName: plan.name
+            }, {
+                headers: {
+                    'x-auth-token': token
+                }
+            });
+
+            if (response.data.success) {
+                // Wait a bit to show the processing state before showing success
+                // In a real app, you might poll for status here
+                setTimeout(() => {
+                    setIsProcessing(false);
+                    setPaymentStep('success');
+                }, 2000);
+            } else {
+                setError('Payment initiation failed. Please try again.');
+                setIsProcessing(false);
+                setPaymentStep('input');
+            }
+        } catch (err: any) {
+            console.error('Payment error:', err);
+            setError(err.response?.data?.msg || 'An error occurred while processing your payment.');
             setIsProcessing(false);
-            setPaymentStep('success');
-        }, 5000);
+            setPaymentStep('input');
+        }
     };
 
     if (paymentStep === 'success') {
         return (
-             <div className="max-w-md mx-auto text-center bg-acid-neutral p-8 rounded-xl border border-acid-neutral/60 shadow-lg animate-fade-in-up">
+            <div className="max-w-md mx-auto text-center bg-acid-neutral p-8 rounded-xl border border-acid-neutral/60 shadow-lg animate-fade-in-up">
                 <div className="mx-auto w-20 h-20 flex items-center justify-center rounded-full bg-acid-success/10 mb-6">
                     <IconCheckCircle className="w-12 h-12 text-acid-success" />
                 </div>
@@ -63,11 +91,11 @@ const PaymentPage: React.FC<{ plan: SubscriptionPlan; onBack: () => void; user: 
                         <span className="text-gray-400">Amount Paid:</span>
                         <span className="font-bold text-acid-content">Ksh {plan.price}</span>
                     </div>
-                     <div className="flex justify-between text-sm mb-2">
+                    <div className="flex justify-between text-sm mb-2">
                         <span className="text-gray-400">Transaction ID:</span>
                         <span className="font-mono text-acid-content">MPS{Math.floor(Math.random() * 10000000)}X</span>
                     </div>
-                     <div className="flex justify-between text-sm">
+                    <div className="flex justify-between text-sm">
                         <span className="text-gray-400">Payment Method:</span>
                         <span className="font-bold text-[#39B54A] flex items-center gap-1"><IconMpesa className="w-4 h-4" /> M-Pesa</span>
                     </div>
@@ -85,7 +113,7 @@ const PaymentPage: React.FC<{ plan: SubscriptionPlan; onBack: () => void; user: 
                 <IconChevronLeft />
                 Back to Plans
             </button>
-            
+
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-5xl mx-auto">
                 {/* Order Summary */}
                 <div className="lg:col-span-1">
@@ -96,15 +124,15 @@ const PaymentPage: React.FC<{ plan: SubscriptionPlan; onBack: () => void; user: 
                                 <span>Plan:</span>
                                 <span className="font-medium text-acid-content">{plan.name}</span>
                             </div>
-                             <div className="flex justify-between">
+                            <div className="flex justify-between">
                                 <span>Billing:</span>
                                 <span className="font-medium text-acid-content">Monthly</span>
                             </div>
                         </div>
                         <div className="my-4 border-t border-dashed border-acid-neutral/60"></div>
                         <div className="flex justify-between items-baseline">
-                             <span className="font-semibold text-acid-content">Total</span>
-                             <span className="text-3xl font-bold text-acid-primary">Ksh {plan.price}</span>
+                            <span className="font-semibold text-acid-content">Total</span>
+                            <span className="text-3xl font-bold text-acid-primary">Ksh {plan.price}</span>
                         </div>
                         <div className="mt-6 bg-acid-base-100 p-3 rounded-lg flex items-start gap-3">
                             <IconLock className="w-5 h-5 text-gray-500 mt-0.5" />
@@ -119,17 +147,17 @@ const PaymentPage: React.FC<{ plan: SubscriptionPlan; onBack: () => void; user: 
                 <div className="lg:col-span-2">
                     <div className="bg-acid-neutral p-6 md:p-8 rounded-2xl border border-acid-neutral/60 shadow-lg">
                         <div className="flex items-center gap-4 mb-6">
-                             <div className="w-16 h-16 rounded-xl bg-white flex items-center justify-center shadow-sm p-2">
+                            <div className="w-16 h-16 rounded-xl bg-white flex items-center justify-center shadow-sm p-2">
                                 <IconMpesa className="w-full h-full" />
-                             </div>
-                             <div>
+                            </div>
+                            <div>
                                 <h1 className="text-2xl font-bold text-acid-content">Pay with M-Pesa</h1>
                                 <p className="text-gray-500 text-sm">Instant & Secure mobile payment</p>
-                             </div>
+                            </div>
                         </div>
 
                         {paymentStep === 'processing' ? (
-                             <div className="text-center py-12 animate-fade-in-up">
+                            <div className="text-center py-12 animate-fade-in-up">
                                 <div className="relative mx-auto w-20 h-20 mb-6">
                                     <div className="absolute inset-0 rounded-full border-4 border-[#39B54A]/30"></div>
                                     <div className="absolute inset-0 rounded-full border-4 border-[#39B54A] border-t-transparent animate-spin"></div>
@@ -138,7 +166,7 @@ const PaymentPage: React.FC<{ plan: SubscriptionPlan; onBack: () => void; user: 
                                 <h3 className="text-xl font-bold text-acid-content mb-2">Check your phone</h3>
                                 <p className="text-gray-400 max-w-xs mx-auto mb-8">
                                     We've sent an M-Pesa prompt to <span className="text-acid-content font-bold font-mono">{phoneNumber}</span>.
-                                    <br/>Please enter your PIN to complete the payment.
+                                    <br />Please enter your PIN to complete the payment.
                                 </p>
                                 <div className="text-sm text-gray-500">
                                     Didn't receive a prompt? <button onClick={() => setPaymentStep('input')} className="text-acid-primary hover:underline">Try again</button>
@@ -175,13 +203,13 @@ const PaymentPage: React.FC<{ plan: SubscriptionPlan; onBack: () => void; user: 
                                     {error && <p className="text-sm text-acid-error mt-2 flex items-center gap-1 animate-pulse"><IconChevronLeft className="rotate-180 w-4 h-4" />{error}</p>}
                                 </div>
 
-                                <button 
-                                    type="submit" 
+                                <button
+                                    type="submit"
                                     className="w-full bg-[#39B54A] text-white font-bold py-4 rounded-xl hover:bg-[#32a341] transition shadow-lg shadow-[#39B54A]/20 transform hover:-translate-y-0.5 flex items-center justify-center gap-2"
                                 >
                                     <span>Pay Ksh {plan.price}</span>
                                 </button>
-                                
+
                                 <div className="mt-6 flex justify-center">
                                     <img src="https://upload.wikimedia.org/wikipedia/commons/1/15/M-PESA_LOGO-01.svg" alt="M-Pesa" className="h-6 opacity-50 grayscale hover:grayscale-0 transition-all" />
                                 </div>
